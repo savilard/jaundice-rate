@@ -18,7 +18,7 @@ TEST_ARTICLES = [
 ]
 
 
-async def process_article(session, morph, charged_words, url):
+async def process_article(session, morph, charged_words, url, article_statistics):
     sanitize = SANITIZERS['inosmi_ru']
     html = await fetch(session=session, url=url)
     sanitized_html = sanitize(html)
@@ -31,10 +31,13 @@ async def process_article(session, morph, charged_words, url):
         charged_words=charged_words,
     )
 
-    print('URL:', url)
-    print('Рейтинг:', score)
-    print('Слов в статье:', len(article_words))
-    print('-' * 10)
+    article_statistics.append(
+        {
+            'url': url,
+            'score': score,
+            'word_count': len(article_words),
+        }
+    )
 
 
 async def fetch(session, url):
@@ -59,11 +62,18 @@ async def main():
     morph = MorphAnalyzer()
     charged_words_directory = 'jaundice_rate/charged_dict'
     charged_words = await get_charged_words_from(charged_words_directory, morph)
+    article_statistics = []
 
     async with aiohttp.ClientSession() as session:
         async with create_task_group() as tg:
             for article in TEST_ARTICLES:
-                tg.start_soon(process_article, session, morph, charged_words, article)
+                tg.start_soon(process_article, session, morph, charged_words, article, article_statistics)
+
+    for article_statistic in article_statistics:
+        print('URL:', article_statistic.get('url'), 'неизвестно')
+        print('Рейтинг:', article_statistic.get('score'), 'неизвестно')
+        print('Слов в статье:', article_statistic.get('word_count'), 'неизвестно')
+        print('-' * 10)
 
 
 if __name__ == '__main__':
