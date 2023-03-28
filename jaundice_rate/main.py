@@ -1,4 +1,5 @@
 import asyncio
+import enum
 import pathlib
 
 import aiofiles
@@ -15,29 +16,44 @@ TEST_ARTICLES = [
     'https://inosmi.ru/20230328/finlyandiya-261723675.html',
     'https://inosmi.ru/20230328/zapad-261719994.html',
     'https://inosmi.ru/20230328/ekonomika-261701001.html',
+    'https://inosmi.ru/20230328/ekonomika-261701301.html',
 ]
+
+
+class ProcessingStatus(enum.Enum):
+    OK = 'OK'
+    FETCH_ERROR = 'FETCH_ERROR'
 
 
 async def process_article(session, morph, charged_words, url, article_statistics):
     sanitize = SANITIZERS['inosmi_ru']
-    html = await fetch(session=session, url=url)
-    sanitized_html = sanitize(html)
-    article_words = text_tools.split_by_words(
-        morph=morph,
-        text=sanitized_html,
-    )
-    score = text_tools.calculate_jaundice_rate(
-        article_words=article_words,
-        charged_words=charged_words,
-    )
-
-    article_statistics.append(
-        {
+    try:
+        html = await fetch(session=session, url=url)
+    except aiohttp.ClientResponseError:
+        article_statistic = {
             'url': url,
+            'status': ProcessingStatus.FETCH_ERROR.value,
+            'score': None,
+            'word_count': None,
+        }
+    else:
+        sanitized_html = sanitize(html)
+        article_words = text_tools.split_by_words(
+            morph=morph,
+            text=sanitized_html,
+        )
+        score = text_tools.calculate_jaundice_rate(
+            article_words=article_words,
+            charged_words=charged_words,
+        )
+        article_statistic = {
+            'url': url,
+            'status': ProcessingStatus.OK.value,
             'score': score,
             'word_count': len(article_words),
         }
-    )
+
+    article_statistics.append(article_statistic)
 
 
 async def fetch(session, url):
@@ -70,9 +86,10 @@ async def main():
                 tg.start_soon(process_article, session, morph, charged_words, article, article_statistics)
 
     for article_statistic in article_statistics:
-        print('URL:', article_statistic.get('url'), 'неизвестно')
-        print('Рейтинг:', article_statistic.get('score'), 'неизвестно')
-        print('Слов в статье:', article_statistic.get('word_count'), 'неизвестно')
+        print('URL:', article_statistic.get('url'))
+        print('Статус:', article_statistic.get('status'))
+        print('Рейтинг:', article_statistic.get('score'))
+        print('Слов в статье:', article_statistic.get('word_count'))
         print('-' * 10)
 
 
