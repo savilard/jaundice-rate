@@ -1,6 +1,7 @@
 import asyncio
 import enum
 import pathlib
+import urllib.parse
 
 import aiofiles
 import aiohttp
@@ -8,7 +9,7 @@ from anyio import create_task_group
 from pymorphy2.analyzer import MorphAnalyzer
 
 from jaundice_rate import text_tools
-from jaundice_rate.adapters import SANITIZERS
+from jaundice_rate.adapters import SANITIZERS, ArticleNotFound
 
 TEST_ARTICLES = [
     'https://inosmi.ru/20230328/indiya-261728000.html',
@@ -16,42 +17,61 @@ TEST_ARTICLES = [
     'https://inosmi.ru/20230328/finlyandiya-261723675.html',
     'https://inosmi.ru/20230328/zapad-261719994.html',
     'https://inosmi.ru/20230328/ekonomika-261701001.html',
-    'https://inosmi.ru/20230328/ekonomika-261701301.html',
+    'https://lenta.ru/brief/2021/08/26/afg_terror/',
 ]
 
 
 class ProcessingStatus(enum.Enum):
     OK = 'OK'
     FETCH_ERROR = 'FETCH_ERROR'
+    PARSING_ERROR = 'PARSING_ERROR'
+
+
+def get_html_sanitizer_for(url):
+    parsed_url = urllib.parse.urlparse(url)
+    domain = parsed_url.netloc
+    try:
+        return SANITIZERS[domain]
+    except KeyError:
+        raise ArticleNotFound()
 
 
 async def process_article(session, morph, charged_words, url, article_statistics):
-    sanitize = SANITIZERS['inosmi_ru']
     try:
-        html = await fetch(session=session, url=url)
-    except aiohttp.ClientResponseError:
+        sanitize = get_html_sanitizer_for(url)
+    except ArticleNotFound:
         article_statistic = {
             'url': url,
-            'status': ProcessingStatus.FETCH_ERROR.value,
+            'status': ProcessingStatus.PARSING_ERROR.value,
             'score': None,
             'word_count': None,
         }
     else:
-        sanitized_html = sanitize(html)
-        article_words = text_tools.split_by_words(
-            morph=morph,
-            text=sanitized_html,
-        )
-        score = text_tools.calculate_jaundice_rate(
-            article_words=article_words,
-            charged_words=charged_words,
-        )
-        article_statistic = {
-            'url': url,
-            'status': ProcessingStatus.OK.value,
-            'score': score,
-            'word_count': len(article_words),
-        }
+        try:
+            html = await fetch(session=session, url=url)
+        except aiohttp.ClientResponseError:
+            article_statistic = {
+                'url': url,
+                'status': ProcessingStatus.FETCH_ERROR.value,
+                'score': None,
+                'word_count': None,
+            }
+        else:
+            sanitized_html = sanitize(html)
+            article_words = text_tools.split_by_words(
+                morph=morph,
+                text=sanitized_html,
+            )
+            score = text_tools.calculate_jaundice_rate(
+                article_words=article_words,
+                charged_words=charged_words,
+            )
+            article_statistic = {
+                'url': url,
+                'status': ProcessingStatus.OK.value,
+                'score': score,
+                'word_count': len(article_words),
+            }
 
     article_statistics.append(article_statistic)
 
