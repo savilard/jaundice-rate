@@ -16,7 +16,7 @@ beautifulsoup4 = "^4.12.0"
 httpx = "^0.23.3"
 pymorphy2 = "^0.9.1"
 pymorphy2-dicts = "^2.4.393442.3710985"
-
+aiofiles = "^23.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
