@@ -6,6 +6,7 @@ import urllib
 
 import aiofiles
 import aiohttp
+import anyio
 from anyio import create_task_group
 import pymorphy2
 from pymorphy2.analyzer import MorphAnalyzer
@@ -23,11 +24,14 @@ TEST_ARTICLES = [
     'https://lenta.ru/brief/2021/08/26/afg_terror/',
 ]
 
+FETCH_TIMEOUT = 3
+
 
 class ProcessingStatus(enum.Enum):
     OK = 'OK'
     FETCH_ERROR = 'FETCH_ERROR'
     PARSING_ERROR = 'PARSING_ERROR'
+    TIMEOUT = 'TIMEOUT'
 
 
 def get_html_sanitizer_for(url):
@@ -73,6 +77,8 @@ async def process_article(
         status = ProcessingStatus.FETCH_ERROR
     except ArticleNotFound:
         status = ProcessingStatus.PARSING_ERROR
+    except TimeoutError:
+        status = ProcessingStatus.TIMEOUT
 
     article_statistics.append(
         {
@@ -85,9 +91,10 @@ async def process_article(
 
 
 async def fetch(session, url):
-    async with session.get(url) as response:
-        response.raise_for_status()
-        return await response.text()
+    async with anyio.fail_after(delay=FETCH_TIMEOUT):
+        async with session.get(url) as response:
+            response.raise_for_status()
+            return await response.text()
 
 
 async def extract_file_content_from(filepath: pathlib.Path):
