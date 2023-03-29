@@ -50,7 +50,7 @@ async def process_article(
 
     Args:
         session: aiohttp ClientSession
-        morph: pymorphy2 morph analizer
+        morph: pymorphy2 morph analyzer
         charged_words: charged words
         url: article url
         article_statistics:article statistics
@@ -74,13 +74,14 @@ async def process_article(
     except ArticleNotFound:
         status = ProcessingStatus.PARSING_ERROR
 
-    article_statistic = {
-        'url': url,
-        'status': status.value,
-        'score': score,
-        'word_count': len(article_words) if article_words else None,
-    }
-    article_statistics.append(article_statistic)
+    article_statistics.append(
+        {
+            'url': url,
+            'status': status.value,
+            'score': score,
+            'word_count': len(article_words) if article_words else None,
+        },
+    )
 
 
 async def fetch(session, url):
