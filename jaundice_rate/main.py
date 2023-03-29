@@ -1,15 +1,18 @@
 import asyncio
 import enum
 import pathlib
-import urllib.parse
+from typing import NoReturn
+import urllib
 
 import aiofiles
 import aiohttp
 from anyio import create_task_group
+import pymorphy2
 from pymorphy2.analyzer import MorphAnalyzer
 
 from jaundice_rate import text_tools
-from jaundice_rate.adapters import SANITIZERS, ArticleNotFound
+from jaundice_rate.adapters import ArticleNotFound
+from jaundice_rate.adapters import SANITIZERS
 
 TEST_ARTICLES = [
     'https://inosmi.ru/20230328/indiya-261728000.html',
@@ -36,43 +39,47 @@ def get_html_sanitizer_for(url):
         raise ArticleNotFound()
 
 
-async def process_article(session, morph, charged_words, url, article_statistics):
-    try:
-        sanitize = get_html_sanitizer_for(url)
-    except ArticleNotFound:
-        article_statistic = {
-            'url': url,
-            'status': ProcessingStatus.PARSING_ERROR.value,
-            'score': None,
-            'word_count': None,
-        }
-    else:
-        try:
-            html = await fetch(session=session, url=url)
-        except aiohttp.ClientResponseError:
-            article_statistic = {
-                'url': url,
-                'status': ProcessingStatus.FETCH_ERROR.value,
-                'score': None,
-                'word_count': None,
-            }
-        else:
-            sanitized_html = sanitize(html)
-            article_words = text_tools.split_by_words(
-                morph=morph,
-                text=sanitized_html,
-            )
-            score = text_tools.calculate_jaundice_rate(
-                article_words=article_words,
-                charged_words=charged_words,
-            )
-            article_statistic = {
-                'url': url,
-                'status': ProcessingStatus.OK.value,
-                'score': score,
-                'word_count': len(article_words),
-            }
+async def process_article(
+    session: aiohttp.ClientSession,
+    morph: pymorphy2.MorphAnalyzer,
+    charged_words: list[str],
+    url: str,
+    article_statistics,
+) -> NoReturn:
+    """Calculate  article statistics.
 
+    Args:
+        session: aiohttp ClientSession
+        morph: pymorphy2 morph analizer
+        charged_words: charged words
+        url: article url
+        article_statistics:article statistics
+    """
+    score, article_words = None, None
+    try:
+        html = await fetch(session=session, url=url)
+        sanitize = get_html_sanitizer_for(url)
+        sanitized_html = sanitize(html)
+        article_words = text_tools.split_by_words(
+            morph=morph,
+            text=sanitized_html,
+        )
+        score = text_tools.calculate_jaundice_rate(
+            article_words=article_words,
+            charged_words=charged_words,
+        )
+        status = ProcessingStatus.OK
+    except aiohttp.ClientResponseError:
+        status = ProcessingStatus.FETCH_ERROR
+    except ArticleNotFound:
+        status = ProcessingStatus.PARSING_ERROR
+
+    article_statistic = {
+        'url': url,
+        'status': status.value,
+        'score': score,
+        'word_count': len(article_words) if article_words else None,
+    }
     article_statistics.append(article_statistic)
 
 
