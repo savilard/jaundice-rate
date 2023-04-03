@@ -1,6 +1,9 @@
 import asyncio
+import datetime
 import enum
 import pathlib
+import time
+from contextlib import contextmanager
 from typing import NoReturn
 import urllib
 
@@ -24,6 +27,18 @@ TEST_ARTICLES = [
 ]
 
 FETCH_TIMEOUT = 3
+
+
+@contextmanager
+def timeit():
+    start = time.monotonic()
+
+    class _Timer:
+        duration = time.monotonic() - start
+
+    yield _Timer
+
+    _Timer.duration = time.monotonic() - start
 
 
 class ProcessingStatus(enum.Enum):
@@ -80,11 +95,17 @@ async def process_article(
         )
         return
     sanitized_html = sanitize(html)
-    article_words = text_tools.split_by_words(morph=morph, text=sanitized_html)
+    with timeit() as elapsed_time:
+        article_words = text_tools.split_by_words(morph=morph, text=sanitized_html)
     score = text_tools.calculate_jaundice_rate(article_words=article_words, charged_words=charged_words)
 
     article_statistics.append(
-        {'url': url, 'status': ProcessingStatus.OK.value, 'score': score, 'word_count': len(article_words)},
+        {'url': url,
+         'status': ProcessingStatus.OK.value,
+         'score': score,
+         'word_count': len(article_words),
+         'elapsed_time': round(elapsed_time.duration, 2),
+         },
     )
 
 
@@ -150,6 +171,7 @@ async def main():
         print('Статус:', article_statistic.get('status'))
         print('Рейтинг:', article_statistic.get('score'))
         print('Слов в статье:', article_statistic.get('word_count'))
+        print('Анализ закончен за:', article_statistic.get('elapsed_time'))
         print('-' * 10)
 
 
