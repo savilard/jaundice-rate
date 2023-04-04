@@ -96,7 +96,20 @@ async def process_article(
         return
     sanitized_html = sanitize(html)
     with timeit() as elapsed_time:
-        article_words = text_tools.split_by_words(morph=morph, text=sanitized_html)
+        try:
+            article_words = await text_tools.split_by_words(morph=morph, text=sanitized_html)
+        except TimeoutError:
+            article_statistics.append(
+                {
+                    'url': url,
+                    'status': ProcessingStatus.TIMEOUT.value,
+                    'score': None,
+                    'word_count': None,
+                    'elapsed_time': elapsed_time.duration,
+                },
+            )
+            return
+
     score = text_tools.calculate_jaundice_rate(article_words=article_words, charged_words=charged_words)
 
     article_statistics.append(
@@ -149,7 +162,7 @@ async def get_charged_words_from(directory: str, morph: MorphAnalyzer) -> list[s
         object: list of charged words
     """
     return [
-        text_tools.split_by_words(morph=morph, text=await extract_file_content_from(filepath))
+        await text_tools.split_by_words(morph=morph, text=await extract_file_content_from(filepath))
         for filepath in pathlib.Path(directory).glob('**/*.txt')
     ][0]
 

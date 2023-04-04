@@ -1,13 +1,16 @@
 import pymorphy2
+import pytest
 
 from jaundice_rate import text_tools
 
 
-def test_split_by_words():
+@pytest.mark.asyncio
+async def test_split_by_words():
     morph = pymorphy2.MorphAnalyzer()
 
-    assert text_tools.split_by_words(morph, 'Во-первых, он хочет, чтобы') == ['во-первых', 'хотеть', 'чтобы']
-    assert text_tools.split_by_words(morph, '«Удивительно, но это стало началом!»') == ['удивительно', 'это', 'стать', 'начало']
+    assert await text_tools.split_by_words(morph, 'Во-первых, он хочет, чтобы') == ['во-первых', 'хотеть', 'чтобы']
+    assert await text_tools.split_by_words(morph, '«Удивительно, но это стало началом!»') == ['удивительно', 'это',
+                                                                                              'стать', 'начало']
 
 
 def test_calculate_jaundice_rate():

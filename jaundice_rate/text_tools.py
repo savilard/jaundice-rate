@@ -1,5 +1,8 @@
 import string
 
+import anyio
+from async_timeout import timeout
+
 
 def _clean_word(word):
     word = word.replace('«', '').replace('»', '').replace('…', '')
@@ -7,14 +10,16 @@ def _clean_word(word):
     return word
 
 
-def split_by_words(morph, text):
+async def split_by_words(morph, text):
     """Takes into account punctuation marks, case and word forms, and throws out prepositions."""
     words = []
-    for word in text.split():
-        cleaned_word = _clean_word(word)
-        normalized_word = morph.parse(cleaned_word)[0].normal_form
-        if len(normalized_word) > 2 or normalized_word == 'не':
-            words.append(normalized_word)
+    async with anyio.fail_after(3):
+        for word in text.split():
+            cleaned_word = _clean_word(word)
+            normalized_word = morph.parse(cleaned_word)[0].normal_form
+            if len(normalized_word) > 2 or normalized_word == 'не':
+                words.append(normalized_word)
+            await anyio.sleep(0)
     return words
 
 
