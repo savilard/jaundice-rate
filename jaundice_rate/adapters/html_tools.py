@@ -1,21 +1,32 @@
-DEFAULT_BLACKLIST_TAGS = [
-    'script',
-    'time'
-]
+import bs4
 
-DEFAULT_UNWRAPLIST_TAGS = [
+DEFAULT_BLACKLIST_TAGS = frozenset(
+    (
+        'script',
+        'time',
+    ),
+)
+
+DEFAULT_UNWRAPLIST_TAGS = frozenset((
     'div',
     'p',
     'span',
     'address',
     'article',
     'header',
-    'footer'
-]
+    'footer',
+))
 
 
-def remove_buzz_attrs(soup):
-    """Remove all attributes except some special tags."""
+def remove_buzz_attrs(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
+    """Remove all attributes except some special tags.
+
+    Args:
+        soup: bs4 BeautifulSoup
+
+    Returns:
+        object: bs4 BeautifulSoup
+    """
     for tag in soup.find_all(True):
         if tag.name == 'a':
             tag.attrs = {

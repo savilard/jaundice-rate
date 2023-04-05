@@ -4,9 +4,9 @@ from jaundice_rate.adapters import html_tools
 from jaundice_rate.adapters.exceptions import ArticleNotFound
 
 
-def sanitize(html, plaintext=False):
+def sanitize(html: str, plaintext: bool = False):
     soup = BeautifulSoup(html, 'html.parser')
-    article = soup.select_one("div.layout-article")
+    article = soup.select_one('div.layout-article')
 
     if not article:
         raise ArticleNotFound()
@@ -28,9 +28,9 @@ def sanitize(html, plaintext=False):
     html_tools.remove_buzz_attrs(article)
     html_tools.remove_buzz_tags(article)
 
-    if not plaintext:
-        text = article.prettify()
-    else:
+    if plaintext:
         html_tools.remove_all_tags(article)
         text = article.get_text()
+    else:
+        text = article.prettify()
     return text.strip()

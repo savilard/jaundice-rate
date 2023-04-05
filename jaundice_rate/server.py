@@ -22,12 +22,16 @@ async def index(request):
             data={'error': 'Pass at least one article address via the urls parameter'},
             status=http.HTTPStatus.BAD_REQUEST,
         )
-    article_statistics = await process_articles_from(
+    articles_stats = await process_articles_from(
         urls=urls.split(','),
         morph=request.app['morph'],
         charged_words=request.app['charged_words'],
     )
-    return web.json_response(data=article_statistics)
+    payload = {
+        'status': 'OK',
+        'data': [article_stats.to_dict() for article_stats in articles_stats],
+    }
+    return web.json_response(data=payload, status=http.HTTPStatus.OK)
 
 
 async def init():
