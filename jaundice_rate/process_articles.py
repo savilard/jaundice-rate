@@ -167,26 +167,25 @@ async def get_charged_words_from(directory: str, morph: MorphAnalyzer) -> list[s
     ][0]
 
 
+async def process_articles_from(urls, morph, charged_words):
+    article_statistics = []
+
+    async with aiohttp.ClientSession() as session:
+        async with anyio.create_task_group() as tg:
+            for url in urls:
+                tg.start_soon(process_article, session, morph, charged_words, url, article_statistics)
+
+    return article_statistics
+
+
 async def main():
     """Entry point."""
     morph = MorphAnalyzer()
     charged_words_directory = 'jaundice_rate/charged_dict'
     charged_words = await get_charged_words_from(charged_words_directory, morph)
-    article_statistics = []
 
-    async with aiohttp.ClientSession() as session:
-        async with anyio.create_task_group() as tg:
-            for article in TEST_ARTICLES:
-                tg.start_soon(process_article, session, morph, charged_words, article, article_statistics)
-
-    for article_statistic in article_statistics:
-        print('URL:', article_statistic.get('url'))
-        print('Статус:', article_statistic.get('status'))
-        print('Рейтинг:', article_statistic.get('score'))
-        print('Слов в статье:', article_statistic.get('word_count'))
-        print('Анализ закончен за:', article_statistic.get('elapsed_time'))
-        print('-' * 10)
+    await process_articles_from(urls=TEST_ARTICLES, morph=morph, charged_words=charged_words)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    anyio.run(main)
