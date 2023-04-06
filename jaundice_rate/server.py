@@ -16,14 +16,14 @@ async def index(request):
     Returns:
         object: aiohttp json response
     """
-    param = request.query.get('urls')
-    if param is None:
+    parameter_with_urls = request.query.get('urls')
+    if parameter_with_urls is None:
         return web.json_response(
             data={'error': 'Pass at least one article address via the urls parameter'},
             status=http.HTTPStatus.NOT_FOUND,
         )
-    urls = param.split(',')
 
+    urls = parameter_with_urls.split(',')
     if len(urls) > 10:
         return web.json_response(
             data={'error': 'Too many urls in request, should be 10 or less'},
