@@ -1,15 +1,15 @@
 from bs4 import BeautifulSoup
 
 from jaundice_rate.adapters import html_tools
-from jaundice_rate.adapters.exceptions import ArticleNotFound
+from jaundice_rate.adapters.exceptions import ArticleNotFoundError
 
 
-def sanitize(html: str, plaintext: bool = False):
+def sanitize(html: str, plaintext: bool = False):  # noqa: D103
     soup = BeautifulSoup(html, 'html.parser')
     article = soup.select_one('div.layout-article')
 
     if not article:
-        raise ArticleNotFound()
+        raise ArticleNotFoundError()
 
     article.attrs = {}
 

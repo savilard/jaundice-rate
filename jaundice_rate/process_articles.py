@@ -25,8 +25,8 @@ class ProcessingStatus(enum.Enum):
     TIMEOUT = 'TIMEOUT'
 
 
-class ArticleStats(NamedTuple):
-    """Article stats attributes."""
+class Article(NamedTuple):
+    """Article attributes."""
 
     url: str
     status: str
@@ -74,15 +74,15 @@ def handle_exceptions(articles_stats, url):
         yield articles_stats, url
     except aiohttp.ClientResponseError:
         articles_stats.append(
-            ArticleStats(url=url, status=ProcessingStatus.FETCH_ERROR.value),
+            Article(url=url, status=ProcessingStatus.FETCH_ERROR.value),
         )
     except TimeoutError:
         articles_stats.append(
-            ArticleStats(url=url, status=ProcessingStatus.TIMEOUT.value),
+            Article(url=url, status=ProcessingStatus.TIMEOUT.value),
         )
-    except adapters.ArticleNotFound:
+    except adapters.ArticleNotFoundError:
         articles_stats.append(
-            ArticleStats(url=url, status=ProcessingStatus.PARSING_ERROR.value),
+            Article(url=url, status=ProcessingStatus.PARSING_ERROR.value),
         )
 
 
@@ -112,14 +112,14 @@ def get_sanitizer_for(url: str):
         object: article sanitizer
 
     Raises:
-        ArticleNotFound: no sanitizer found for the article
+        ArticleNotFoundError: no sanitizer found for the article
     """
     parsed_url = urllib.parse.urlparse(url)
     domain = parsed_url.netloc
     try:
         return adapters.SANITIZERS[domain]
     except KeyError:
-        raise adapters.ArticleNotFound()
+        raise adapters.ArticleNotFoundError()
 
 
 async def process_article(
@@ -128,7 +128,7 @@ async def process_article(
     charged_words: list[str],
     url: str,
     article_statistics,
-) -> ArticleStats:
+) -> None:
     """Calculate article statistics.
 
     Args:
@@ -153,7 +153,7 @@ async def process_article(
             charged_words=charged_words,
         )
         article_statistics.append(
-            ArticleStats(
+            Article(
                 url=url,
                 status=ProcessingStatus.OK.value,
                 rate=rate,

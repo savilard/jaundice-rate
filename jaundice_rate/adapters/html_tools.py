@@ -42,7 +42,11 @@ def remove_buzz_attrs(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
     return soup
 
 
-def remove_buzz_tags(soup, blacklist=DEFAULT_BLACKLIST_TAGS, unwraplist=DEFAULT_UNWRAPLIST_TAGS):
+def remove_buzz_tags(
+    soup: bs4.BeautifulSoup,
+    blacklist=DEFAULT_BLACKLIST_TAGS,
+    unwraplist=DEFAULT_UNWRAPLIST_TAGS,
+):
     """Remove tags, leaves only tags significant for text analysis."""
     for tag in soup.find_all(True):
         if tag.name in blacklist:
@@ -51,7 +55,11 @@ def remove_buzz_tags(soup, blacklist=DEFAULT_BLACKLIST_TAGS, unwraplist=DEFAULT_
             tag.unwrap()
 
 
-def remove_all_tags(soup):
-    """Unwrap all tags."""
+def remove_all_tags(soup: bs4.BeautifulSoup) -> None:
+    """Unwrap all tags.
+
+    Args:
+        soup: bs4 BeautifulSoup
+    """
     for tag in soup.find_all(True):
         tag.unwrap()

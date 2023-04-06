@@ -1,5 +1,5 @@
 from jaundice_rate.adapters.inosmi_ru import sanitize
-from jaundice_rate.adapters.exceptions import ArticleNotFound
+from jaundice_rate.adapters.exceptions import ArticleNotFoundError
 
 import pytest
 import httpx
@@ -33,5 +33,5 @@ def test_sanitize_wrong_url():
     with httpx.Client(follow_redirects=True) as client:
         resp = client.get('http://example.com')
     resp.raise_for_status()
-    with pytest.raises(ArticleNotFound):
+    with pytest.raises(ArticleNotFoundError):
         sanitize(resp.text)

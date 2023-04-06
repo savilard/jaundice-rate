@@ -1,13 +1,11 @@
+import re
 import string
 
 import anyio
-from async_timeout import timeout
 
 
 def _clean_word(word):
-    word = word.replace('«', '').replace('»', '').replace('…', '')
-    word = word.strip(string.punctuation)
-    return word
+    return re.sub(r'«|»|…\s', '', word).strip(string.punctuation)
 
 
 async def split_by_words(morph, text):
@@ -26,11 +24,9 @@ async def split_by_words(morph, text):
 def calculate_jaundice_rate(article_words, charged_words):
     """Calculates text jaundice, takes a list of "charged" words and searches for them inside article_words."""
     if not article_words:
-        return 0.0
+        return float(0)
 
     found_charged_words = [word for word in article_words if word in set(charged_words)]
     score = len(found_charged_words) / len(article_words) * 100
 
     return round(score, 2)
-
-
