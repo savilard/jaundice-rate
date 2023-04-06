@@ -16,14 +16,22 @@ async def index(request):
     Returns:
         object: aiohttp json response
     """
-    urls = request.query.get('urls')
-    if urls is None:
+    param = request.query.get('urls')
+    if param is None:
         return web.json_response(
             data={'error': 'Pass at least one article address via the urls parameter'},
+            status=http.HTTPStatus.NOT_FOUND,
+        )
+    urls = param.split(',')
+
+    if len(urls) > 10:
+        return web.json_response(
+            data={'error': 'Too many urls in request, should be 10 or less'},
             status=http.HTTPStatus.BAD_REQUEST,
         )
+
     articles_stats = await process_articles_from(
-        urls=urls.split(','),
+        urls=urls,
         morph=request.app['morph'],
         charged_words=request.app['charged_words'],
     )
