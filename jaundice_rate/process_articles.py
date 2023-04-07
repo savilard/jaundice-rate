@@ -139,8 +139,8 @@ async def process_article(
         article_statistics:article statistics
     """
     with handle_exceptions(articles_stats=article_statistics, url=url):
-        html = await fetch(session=session, url=url)
         sanitize = get_sanitizer_for(url)
+        html = await fetch(session=session, url=url)
 
         with timeit() as elapsed_time:
             article_words = await text_tools.split_by_words(
