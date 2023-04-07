@@ -31,3 +31,18 @@ async def test_article_fetch_error(morph):
         )
 
     assert article_stats == [Article(url=url, status='FETCH_ERROR', rate=None, word_count=None, elapsed_time=None)]
+
+
+@pytest.mark.asyncio
+async def test_article_fetch_timeout_error(morph):
+    url = 'https://inosmi.ru/economic/20190625/245384784.html'
+    charged_words = ['во-первых', 'хотеть', 'чтобы']
+
+    article_stats = await process_articles_from(
+            morph=morph,
+            urls=[url],
+            charged_words=charged_words,
+            fetch_timeout=0.2,
+        )
+
+    assert article_stats == [Article(url=url, status='TIMEOUT', rate=None, word_count=None, elapsed_time=None)]

@@ -86,17 +86,22 @@ def handle_exceptions(articles_stats, url):
         )
 
 
-async def fetch(session: aiohttp.ClientSession, url: str) -> str:
+async def fetch(
+    session: aiohttp.ClientSession,
+    url: str,
+    timeout: int | float | None = FETCH_TIMEOUT,
+) -> str:
     """Fetch an article from her url.
 
     Args:
         session: aiohttp client session
         url: article url
+        timeout: article fetch timeout in seconds
 
     Returns:
         object: article text
     """
-    async with anyio.fail_after(delay=FETCH_TIMEOUT):
+    async with anyio.fail_after(delay=timeout):
         async with session.get(url) as response:
             response.raise_for_status()
             return await response.text()
@@ -128,6 +133,7 @@ async def process_article(
     charged_words: list[str],
     url: str,
     article_statistics,
+    fetch_timeout: int | float | None = None,
 ) -> None:
     """Calculate article statistics.
 
@@ -137,10 +143,11 @@ async def process_article(
         charged_words: charged words
         url: article url
         article_statistics:article statistics
+        fetch_timeout: article fetch timeout in seconds
     """
     with handle_exceptions(articles_stats=article_statistics, url=url):
         sanitize = get_sanitizer_for(url)
-        html = await fetch(session=session, url=url)
+        html = await fetch(session=session, url=url, timeout=fetch_timeout)
 
         with timeit() as elapsed_time:
             article_words = await text_tools.split_by_words(
@@ -202,6 +209,7 @@ async def process_articles_from(
     urls: list[str],
     morph: pymorphy2.MorphAnalyzer,
     charged_words: list[str],
+    fetch_timeout: int | float | None = None,
 ):
     """Start processing articles.
 
@@ -209,6 +217,7 @@ async def process_articles_from(
         urls: articles urls
         morph: pymorphy2 MorphAnalyzer
         charged_words: charged words
+        fetch_timeout: article fetch timeout in seconds
 
     Returns:
         objects: articles_stats
@@ -225,6 +234,7 @@ async def process_articles_from(
                     charged_words,
                     url,
                     articles_stats,
+                    fetch_timeout,
                 )
 
     return articles_stats
