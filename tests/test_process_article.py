@@ -1,4 +1,3 @@
-import aiohttp
 import pytest
 
 from jaundice_rate.process_articles import Article
@@ -6,9 +5,8 @@ from jaundice_rate.process_articles import process_articles_from
 
 
 @pytest.mark.asyncio
-async def test_article_parsing_error(morph):
+async def test_article_parsing_error(morph, charged_words):
     url = 'https://lenta.ru/economic/20190629/245384784.html'
-    charged_words = ['во-первых', 'хотеть', 'чтобы']
 
     article_stats = await process_articles_from(
         morph=morph,
@@ -20,9 +18,8 @@ async def test_article_parsing_error(morph):
 
 
 @pytest.mark.asyncio
-async def test_article_fetch_error(morph):
+async def test_article_not_found_error(morph, charged_words):
     url = 'https://inosmi.ru/economic/520190625/245384784.html'
-    charged_words = ['во-первых', 'хотеть', 'чтобы']
 
     article_stats = await process_articles_from(
             morph=morph,
@@ -34,9 +31,8 @@ async def test_article_fetch_error(morph):
 
 
 @pytest.mark.asyncio
-async def test_article_fetch_timeout_error(morph):
+async def test_article_fetch_timeout_error(morph, charged_words):
     url = 'https://inosmi.ru/economic/20190625/245384784.html'
-    charged_words = ['во-первых', 'хотеть', 'чтобы']
 
     article_stats = await process_articles_from(
             morph=morph,
