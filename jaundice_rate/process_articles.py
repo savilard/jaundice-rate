@@ -12,8 +12,7 @@ import pymorphy2
 
 from jaundice_rate import adapters
 from jaundice_rate import text_tools
-
-FETCH_TIMEOUT = 3
+from jaundice_rate.settings import Settings
 
 
 class ProcessingStatus(enum.Enum):
@@ -89,7 +88,7 @@ def handle_exceptions(articles_stats, url):
 async def fetch(
     session: aiohttp.ClientSession,
     url: str,
-    timeout: int | float | None = FETCH_TIMEOUT,
+    timeout: int | float | None = 3,
 ) -> str:
     """Fetch an article from her url.
 
@@ -243,8 +242,8 @@ async def process_articles_from(
 async def main():
     """Entry point."""
     morph = pymorphy2.MorphAnalyzer()
-    charged_words_directory = 'jaundice_rate/charged_dict'
-    charged_words = await get_charged_words_from(charged_words_directory, morph)
+    settings = Settings()
+    charged_words = await get_charged_words_from(directory=settings.charged_words_directory, morph=morph)
 
     urls = [
         'https://inosmi.ru/20230328/indiya-261728000.html',
@@ -255,6 +254,7 @@ async def main():
         urls=urls,
         morph=morph,
         charged_words=charged_words,
+        fetch_timeout=settings.fetch_timeout,
     )
 
 

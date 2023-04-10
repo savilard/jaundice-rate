@@ -5,6 +5,7 @@ from pymorphy2.analyzer import MorphAnalyzer
 
 from jaundice_rate.process_articles import get_charged_words_from
 from jaundice_rate.process_articles import process_articles_from
+from jaundice_rate.settings import Settings
 
 
 async def index(request):
@@ -16,6 +17,9 @@ async def index(request):
     Returns:
         object: aiohttp json response
     """
+    settings = request.app['settings']
+    morph = request.app['morph']
+
     parameter_with_urls = request.query.get('urls')
     if parameter_with_urls is None:
         return web.json_response(
@@ -24,16 +28,22 @@ async def index(request):
         )
 
     urls = parameter_with_urls.split(',')
-    if len(urls) > 10:
+    if len(urls) > settings.url_limit:
         return web.json_response(
             data={'error': 'Too many urls in request, should be 10 or less'},
             status=http.HTTPStatus.BAD_REQUEST,
         )
 
+    charged_words = await get_charged_words_from(
+        directory=settings.charged_words_directory,
+        morph=morph,
+    )
+
     articles_stats = await process_articles_from(
         urls=urls,
-        morph=request.app['morph'],
-        charged_words=request.app['charged_words'],
+        morph=morph,
+        charged_words=charged_words,
+        fetch_timeout=settings.fetch_timeout,
     )
     payload = {
         'status': 'OK',
@@ -51,11 +61,9 @@ async def init():
     app = web.Application()
     app.add_routes([web.get('/', index)])
 
+    app['settings'] = Settings()
     app['morph'] = MorphAnalyzer()
-    app['charged_words'] = await get_charged_words_from(
-        directory='jaundice_rate/charged_dict',
-        morph=app['morph'],
-    )
+
     return app
 
 
