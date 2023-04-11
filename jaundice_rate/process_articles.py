@@ -53,7 +53,7 @@ def timeit():
     start_time = time.monotonic()
     yield
     elapsed_time = time.monotonic() - start_time
-    logging.info(f'Анализ закончен за {round(elapsed_time, 2)} сек.')
+    logging.info(f'The analysis is complete for {round(elapsed_time, 2)} sec.')
 
 
 async def fetch(
