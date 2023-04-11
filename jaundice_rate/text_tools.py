@@ -26,7 +26,9 @@ def calculate_jaundice_rate(article_words, charged_words):
     if not article_words:
         return float(0)
 
-    found_charged_words = [word for word in article_words if word in set(charged_words)]
+    found_charged_words = [
+        word for word in article_words if word in set(charged_words)
+    ]
     score = len(found_charged_words) / len(article_words) * 100
 
     return round(score, 2)

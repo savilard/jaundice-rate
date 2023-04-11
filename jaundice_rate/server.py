@@ -3,9 +3,7 @@ import http
 from aiohttp import web
 from pymorphy2.analyzer import MorphAnalyzer
 
-from jaundice_rate.process_articles import get_charged_words_from
-from jaundice_rate.process_articles import process_articles_from
-from jaundice_rate.settings import Settings
+import jaundice_rate
 
 
 async def index(request):
@@ -23,7 +21,9 @@ async def index(request):
     parameter_with_urls = request.query.get('urls')
     if parameter_with_urls is None:
         return web.json_response(
-            data={'error': 'Pass at least one article address via the urls parameter'},
+            data={
+                'error': 'Pass at least one article address via the urls parameter',
+            },
             status=http.HTTPStatus.NOT_FOUND,
         )
 
@@ -34,12 +34,12 @@ async def index(request):
             status=http.HTTPStatus.BAD_REQUEST,
         )
 
-    charged_words = await get_charged_words_from(
-        directory=settings.charged_words_directory,
+    charged_words = await jaundice_rate.get_charged_words_from(
+        path_to_directory=settings.charged_words_directory,
         morph=morph,
     )
 
-    articles_stats = await process_articles_from(
+    articles_stats = await jaundice_rate.process_articles_from(
         urls=urls,
         morph=morph,
         charged_words=charged_words,
@@ -61,7 +61,7 @@ async def init():
     app = web.Application()
     app.add_routes([web.get('/', index)])
 
-    app['settings'] = Settings()
+    app['settings'] = jaundice_rate.Settings()
     app['morph'] = MorphAnalyzer()
 
     return app

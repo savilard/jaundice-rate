@@ -7,15 +7,17 @@ DEFAULT_BLACKLIST_TAGS = frozenset(
     ),
 )
 
-DEFAULT_UNWRAPLIST_TAGS = frozenset((
-    'div',
-    'p',
-    'span',
-    'address',
-    'article',
-    'header',
-    'footer',
-))
+DEFAULT_UNWRAPLIST_TAGS = frozenset(
+    (
+        'div',
+        'p',
+        'span',
+        'address',
+        'article',
+        'header',
+        'footer',
+    ),
+)
 
 
 def remove_buzz_attrs(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
