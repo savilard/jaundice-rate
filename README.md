@@ -5,8 +5,6 @@
   <img alt="Python version" src="https://img.shields.io/badge/python-3.10-green?style=for-the-badge" />
 </p>
 
----
-
 <!-- TOC -->
   * [Description](#description)
   * [Installation](#installation)
