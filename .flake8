@@ -21,8 +21,8 @@ exclude =
   *.egg
   dist
   __init__.py
+  tests
 
-# Self settings:
 max-imports = 15
 
 ignore = C101, D100, D104, D401, E203, W503, W504, RST303, RST304, DAR103, DAR203, WPS202, WPS305, WPS306,
